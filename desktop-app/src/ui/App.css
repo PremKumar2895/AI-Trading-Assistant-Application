@@ -1,8 +1,390 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 body {
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  user-select: none;
-  overflow: hidden;
-  -webkit-app-region: drag;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    user-select: none;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    -webkit-app-region: drag;
+    /* Allow dragging by default on body */
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.app-container {
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+    background: rgba(18, 18, 20, 0.95);
+    /* Deep dark background */
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    color: #ffffff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    position: relative;
+    transition: border-color 0.3s ease;
+}
+
+/* Dynamic Borders based on Signal */
+.app-container.buy {
+    border-color: #00E676;
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.2);
+}
+
+.app-container.sell {
+    border-color: #FF5252;
+    box-shadow: 0 0 20px rgba(255, 82, 82, 0.2);
+}
+
+.app-container.wait {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.app-container.info {
+    border-color: #FFC107;
+}
+
+/* Context Bar */
+.context-bar {
+    display: flex;
+    justify-content: space-evenly;
+    /* Better spacing */
+    width: 100%;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    /* Slightly clearer bg */
+    border-radius: 12px;
+    padding: 12px 0;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.context-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Ensure label and value don't touch */
+    gap: 4px;
+}
+
+.context-item .label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.context-item .value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    /* Fix text squash */
+    white-space: nowrap;
+}
+
+.context-item .value.warn {
+    color: #ffcc00;
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+.context-item .value.good {
+    color: #00ff88;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+
+/* Trade Grid */
+.trade-grid {
+    display: grid;
+    /* Grid is more robust here */
+    grid-template-columns: 1fr 1fr 1fr;
+    width: 100%;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.trade-box {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
+}
+
+.trade-box.entry {
+    border-color: rgba(0, 150, 255, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 150, 255, 0.1);
+}
+
+.trade-box.sl {
+    border-color: rgba(255, 50, 50, 0.4);
+    box-shadow: 0 4px 15px rgba(255, 50, 50, 0.1);
+}
+
+.trade-box.tp {
+    border-color: rgba(0, 255, 136, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.1);
+}
+
+.box-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.box-value {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+/* HEADER */
+.header {
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-badge.scanning {
+    background: rgba(33, 150, 243, 0.2);
+    color: #64B5F6;
+}
+
+.status-badge.paused {
+    background: rgba(255, 255, 255, 0.1);
+    color: #aaa;
+}
+
+.status-badge.error {
+    background: rgba(244, 67, 54, 0.2);
+    color: #EF5350;
+}
+
+/* MAIN CONTENT */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+}
+
+.signal-display {
+    text-align: center;
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.signal-text {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    line-height: 1;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.signal-text.buy {
+    color: #00E676;
+    filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.4));
+}
+
+.signal-text.sell {
+    color: #FF5252;
+    filter: drop-shadow(0 0 10px rgba(255, 82, 82, 0.4));
+}
+
+.signal-text.wait {
+    color: #aaa;
+    font-size: 32px;
+}
+
+.signal-text.info {
+    color: #FFC107;
+    font-size: 24px;
+}
+
+.context-info {
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reason-text {
+    margin-top: 15px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 80%;
+}
+
+/* FOOTER */
+.footer {
+    height: 100px;
+    /* Increased height for toggle */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* backdrop-filter: brightness(0.9); */
+}
+
+.force-scan-toggle {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+
+.force-scan-toggle:hover {
+    color: #fff;
+}
+
+.force-scan-toggle input {
+    accent-color: #2196F3;
+    cursor: pointer;
+}
+
+.control-btn {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    border: none;
+    border-radius: 25px;
+    padding: 12px 30px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    transition: all 0.2s ease;
+    -webkit-app-region: no-drag;
+    /* Important to be clickable */
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
+.control-btn.stop {
+    background: linear-gradient(135deg, #EF5350, #D32F2F);
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+}
+
+.control-btn.stop:hover {
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+}
+
+/* TOAST */
+.toast-container {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    z-index: 100;
+}
+
+.toast {
+    background: rgba(30, 30, 30, 0.9);
+    backdrop-filter: blur(10px);
+    border-left: 4px solid #fff;
+    padding: 12px 16px;
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    animation: slideUp 0.3s ease-out;
+    font-size: 13px;
+    color: #eee;
+}
+
+.toast.warn {
+    border-left-color: #FFC107;
+}
+
+.toast.error {
+    border-left-color: #FF5252;
+}
+
+.toast.info {
+    border-left-color: #2196F3;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        scale: 0.9;
+    }
+
+    to {
+        opacity: 1;
+        scale: 1;
+    }
 }

@@ -27,61 +27,66 @@ def detect_candles(original_img, processed_img):
         if w * h < min_area:
             continue
 
-        # Aspect ratio check - Candles are generally tall/thin or square-ish, not super wide
+        # Aspect Ratio Filter
+        # Candles (with wicks) are usually tall (h > w)
+        # Ratio w/h should be < 1.2 (roughly square or taller)
+        # Wide rectangles (w > 1.2h) are usually buttons or labels.
         aspect_ratio = float(w) / h
-        if aspect_ratio > 5.0: # Ignore very wide things (like trend lines maybe)
+        if aspect_ratio > 1.2: 
             continue
             
-        # Extract Region of Interest (ROI) from original color image to determine color
+        # Extract ROI
         roi = original_img[y:y+h, x:x+w]
         
-        # Determine Color (Bullish vs Bearish)
-        # We assume standard Green/Red or White/Black. 
-        # Simple heuristic: excessive Green or White is Bullish. Red or Black is Bearish.
-        # This is a simplification; users might need to tune specific HSV ranges.
-        # For now, let's use a mean color check.
+        # Color Logic using HSV
+        hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         
-        avg_color_per_row = np.average(roi, axis=0)
-        avg_color = np.average(avg_color_per_row, axis=0) # BGR
+        # Define masks
+        # Red: Hue 0-10 and 170-180
+        lower_red1 = np.array([0, 50, 50])
+        upper_red1 = np.array([10, 255, 255])
+        lower_red2 = np.array([170, 50, 50])
+        upper_red2 = np.array([180, 255, 255])
         
-        # BGR: Green is [0, 255, 0], Red is [0, 0, 255]
-        blue, green, red = avg_color
+        # Green: Hue 35-85 (Covers slight yellow-green to teal-green)
+        lower_green = np.array([35, 50, 50])
+        upper_green = np.array([95, 255, 255])
         
+        mask_red1 = cv2.inRange(hsv_roi, lower_red1, upper_red1)
+        mask_red2 = cv2.inRange(hsv_roi, lower_red2, upper_red2)
+        mask_green = cv2.inRange(hsv_roi, lower_green, upper_green)
+        
+        red_pixels = cv2.countNonZero(mask_red1) + cv2.countNonZero(mask_red2)
+        green_pixels = cv2.countNonZero(mask_green)
+        total_pixels = w * h
+        
+        # Determine Type
         candle_type = "wait"
-        if green > red and green > blue:
+        
+        # Threshold: meaningful amount of color
+        if green_pixels > total_pixels * 0.2:
             candle_type = "bullish"
-        elif red > green and red > blue:
+        elif red_pixels > total_pixels * 0.2:
             candle_type = "bearish"
         else:
-             # Basic fallback for distinct colors, assuming bright = bullish, dark = bearish if simple BW
-            if np.mean(avg_color) > 127: 
-                candle_type = "bullish"
-            else:
-                candle_type = "bearish"
+            # If neither, it might be a grey doji or noise
+            # Skip noise
+            continue
+            
+        # Conflict resolution (if both present, take winner)
+        if candle_type == "bullish" and red_pixels > green_pixels:
+            candle_type = "bearish"
+        elif candle_type == "bearish" and green_pixels > red_pixels:
+             candle_type = "bullish"
 
-        # Approximate OHLC relative to the candle's bounding box
-        # This is strictly visual "body" detection.
-        # We can try to separate wicks from body if needed, but for Phase 1, 
-        # using the bounding box as the "total range" and estimating body size is safer vs full CV decomposition.
-        
-        # NOTE: A more advanced CV approach would be to detect the solid block vs the line.
-        # Let's try a simple center-column scan to find the solid body vs the wick.
-        
-        # Center column scan
-        center_x = w // 2
-        col_slice = roi[:, center_x] # slice of the center vertical line
-        # Check non-background pixels in this slice if we had a mask, but we have the raw ROI.
-        
-        # Simplified for Phase 1: 
-        # Total Height = High - Low
-        # Body Height = Approx (needs refinement, but let's assume body is the "thick" part)
-        
         candles.append({
             "x": x,
+            "y": y,
             "total_height": h,
             "body_width": w,
             "type": candle_type,
-            "color_avg": (int(blue), int(green), int(red))
+            # Debug color (just for show)
+            "color_stats": {"g": green_pixels, "r": red_pixels}
         })
 
     return candles

@@ -4,7 +4,7 @@ echo AI Trading Assistant - One-Click Launcher
 echo ===================================================
 
 echo 1. Starting Python Signal Engine...
-start "Python Engine" cmd /k "cd python-engine && uvicorn app:app --host 0.0.0.0 --port 8000"
+start "Python Engine" cmd /k "cd python-engine && uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
 
 echo 2. Starting React UI Renderer...
 start "React UI" cmd /k "cd desktop-app && npm run dev"

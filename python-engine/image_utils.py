@@ -27,4 +27,21 @@ def preprocess_image(image_bytes):
     kernel = np.ones((3, 3), np.uint8)
     closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
-    return img, closed, gray
+    # 6. Invert Grayscale (for OCR on dark themes)
+    inverted_gray = cv2.bitwise_not(gray)
+
+    return img, closed, gray, inverted_gray
+
+def mask_overlay(image, x, y, w, h):
+    """
+    Draws a black rectangle over the specified region to hide the overlay from CV/OCR.
+    """
+    try:
+        # Ensure integer coordinates
+        x, y, w, h = int(x), int(y), int(w), int(h)
+        # Draw filled black rectangle
+        # (check dimensions to avoid error, though cv2 usually handles clipping)
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), -1)
+    except Exception as e:
+        print(f"Masking error: {e}")
+    return image

@@ -41,8 +41,15 @@ function onSignalReceived(callback) {
     onSignalCallback = callback;
 }
 
+function sendCommand(data) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(data));
+    }
+}
+
 module.exports = {
     connectWebSocket,
     sendFrame,
-    onSignalReceived
+    onSignalReceived,
+    sendCommand
 };
