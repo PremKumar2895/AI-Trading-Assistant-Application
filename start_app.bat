@@ -1,22 +1,27 @@
 @echo off
 echo ===================================================
-echo AI Trading Assistant - One-Click Launcher
+echo AI Trading Assistant - Launcher
 echo ===================================================
 
-echo 1. Starting Python Signal Engine...
-start "Python Engine" cmd /k "cd python-engine && uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
+cd /d "%~dp0"
 
-echo 2. Starting React UI Renderer...
-start "React UI" cmd /k "cd desktop-app && npm run dev"
+echo 1. Python Engine (port 8000)...
+start "Python Engine" cmd /k "%~dp0start_python.bat"
 
-echo Waiting 5 seconds for UI to be ready...
-timeout /t 5 /nobreak
+echo Waiting for engine (up to 20s)...
+powershell -Command "$ok=$false; 1..10 | ForEach-Object { try { $r=Invoke-WebRequest -Uri 'http://127.0.0.1:8000/health' -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){$ok=$true; break} } catch {}; Start-Sleep -Seconds 2 }; if(-not $ok){ Write-Host 'WARNING: Engine not ready - check Python window' } else { Write-Host 'Engine OK' }"
 
-echo 3. Starting Electron Overlay...
-start "Electron App" cmd /k "cd desktop-app && npm start"
+echo 2. React UI...
+start "React UI" cmd /k "cd /d %~dp0desktop-app && npm run dev"
+
+timeout /t 5 /nobreak >nul
+
+echo 3. Electron overlay...
+start "Electron App" cmd /k "cd /d %~dp0desktop-app && npm start"
 
 echo ===================================================
-echo All systems launched!
-echo Minimized windows can be found in your taskbar.
+echo Done. If Electron shows connection errors:
+echo   - Open the "Python Engine" window first
+echo   - Visit http://127.0.0.1:8000/health in browser
 echo ===================================================
 pause

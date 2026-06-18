@@ -1,0 +1,25 @@
+{
+  "pooled": {
+    "trades": 535,
+    "win_rate": 49.4,
+    "expectancy_r": 0.076
+  },
+  "calibration": {
+    "0-40": {
+      "n": 0,
+      "win_rate": null
+    },
+    "40-55": {
+      "n": 0,
+      "win_rate": null
+    },
+    "55-70": {
+      "n": 129,
+      "win_rate": 45.7
+    },
+    "70-100": {
+      "n": 403,
+      "win_rate": 50.6
+    }
+  }
+}

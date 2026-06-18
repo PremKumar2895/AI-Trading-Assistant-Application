@@ -1,56 +1,74 @@
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
-const { startCaptureLoop, stopCaptureLoop, setCaptureRegion } = require('./capture/capture');
-const { connectWebSocket, sendFrame, onSignalReceived } = require('./websocket');
 const isDev = require('electron-is-dev');
 
 let mainWindow;
+let tray = null;
+
+const TRAY_ICON_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlz' +
+  'AAALEwAACxMBAJqcGAAAABZJREFUOI1jYBgFgx8wMjIyMow8AAAE0AABsBCGAAAAAElFTkSuQmCC';
+
+function createTray() {
+  try {
+    const icon = nativeImage.createFromDataURL(`data:image/png;base64,${TRAY_ICON_B64}`);
+    tray = new Tray(icon);
+    tray.setToolTip('AI Trading Assistant');
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Show', click: () => mainWindow && (mainWindow.show(), mainWindow.focus()) },
+      { type: 'separator' },
+      { label: 'Quit', click: () => app.quit() },
+    ]));
+    tray.on('click', () => mainWindow && (mainWindow.show(), mainWindow.focus()));
+  } catch (e) {
+    console.warn('Tray creation failed (non-fatal):', e.message);
+  }
+}
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   mainWindow = new BrowserWindow({
-    width: 400, // Small overlay
-    height: 600,
-    x: width - 450,
-    y: 100,
+    width: Math.min(1180, width - 40),
+    height: Math.min(780, height - 40),
+    minWidth: 900,
+    minHeight: 600,
     frame: false,
-    transparent: true,
-    alwaysOnTop: true,
+    backgroundColor: '#0d0e12',
+    show: false,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false, // For MVP speed, usually not recommended but allows require('electron') in renderer
-      webSecurity: false
-    }
+      contextIsolation: false,
+      webSecurity: false, // allow renderer (file://) to call the local engine
+    },
   });
 
-  // Load Vite Dev Server url in Dev, or local file in Prod
   const startUrl = isDev
     ? 'http://localhost:5173'
     : `file://${path.join(__dirname, '../dist/index.html')}`;
-
   mainWindow.loadURL(startUrl);
 
-  // Open DevTools in detached state for debugging if needed
-  // mainWindow.webContents.openDevTools({ mode: 'detach' });
+  let shown = false;
+  const reveal = (why) => {
+    if (shown || !mainWindow || mainWindow.isDestroyed()) return;
+    shown = true;
+    mainWindow.show();
+    mainWindow.focus();
+    console.log(`AI Trading Assistant window visible (${why})`);
+  };
+  mainWindow.once('ready-to-show', () => reveal('ready-to-show'));
+  mainWindow.webContents.once('did-finish-load', () => reveal('did-finish-load'));
+  setTimeout(() => reveal('fallback-timer'), 3000);
 
   mainWindow.on('closed', () => (mainWindow = null));
-
-  // Track window movement to mask it in Python Engine
-  mainWindow.on('move', sendOverlayBounds);
-  mainWindow.on('resize', sendOverlayBounds);
-
-  // Send initial bounds after a short delay to ensure WS is ready
-  setTimeout(sendOverlayBounds, 2000);
 }
 
 app.on('ready', () => {
   createWindow();
-  connectWebSocket(); // Connect to Python Engine on start
+  createTray();
 });
 
 app.on('window-all-closed', () => {
-  stopCaptureLoop();
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -58,43 +76,11 @@ app.on('activate', () => {
   if (mainWindow === null) createWindow();
 });
 
-// --- IPC Handlers ---
-
-// Receive signal from WebSocket logic and forward to UI
-onSignalReceived((signalData) => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('signal-update', signalData);
-  }
-});
-
-// Helper to send bounds
-function sendOverlayBounds() {
+// --- window controls ---
+ipcMain.on('quit-app', () => app.quit());
+ipcMain.on('minimize-app', () => mainWindow && mainWindow.minimize());
+ipcMain.on('maximize-app', () => {
   if (!mainWindow) return;
-  const bounds = mainWindow.getBounds();
-  const { sendCommand } = require('./websocket');
-  sendCommand({ action: 'update_overlay_bounds', bounds });
-}
-
-// UI controls
-ipcMain.on('start-scanning', (event, region) => {
-  console.log("Starting scan with region:", region);
-  if (region) {
-    setCaptureRegion(region); // {x, y, w, h}
-  }
-  // Callback to send frame via WS
-  const onFrameCaptured = (buffer) => {
-    sendFrame(buffer);
-  };
-
-  startCaptureLoop(onFrameCaptured);
-});
-
-ipcMain.on('stop-scanning', () => {
-  console.log("Stopping scan");
-  stopCaptureLoop();
-});
-
-ipcMain.on('send-command', (event, data) => {
-  const { sendCommand } = require('./websocket');
-  sendCommand(data);
+  if (mainWindow.isMaximized()) mainWindow.unmaximize();
+  else mainWindow.maximize();
 });

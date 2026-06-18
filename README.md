@@ -30,12 +30,16 @@ It will automatically launch Python, React, and Electron in separate windows.
 ### Manual Start
 If you prefer running manual commands, follow these steps:
 
-**Terminal 1 (Python Engine):**
+**Terminal 1 (Python Engine) — required first:**
 ```sh
+# Double-click start_python.bat  OR:
 cd python-engine
-uvicorn app:app --host 0.0.0.0 --port 8000
+pip install -r requirements.txt
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
-*You should see "Uvicorn running on http://0.0.0.0:8000"*
+Verify in browser: **http://127.0.0.1:8000/health** (must show `{"status":"healthy"}`)
+
+> Use `127.0.0.1` in the browser, not `0.0.0.0` (invalid in browsers).
 
 **Terminal 2 (desktop-app):**
 Run `desktop-app\run_ui.bat`
@@ -51,8 +55,21 @@ Run `desktop-app\run_electron.bat`
 4. The system will start capturing the screen and analyzing candles.
 5. Signals (BUY/SELL/WAIT) will appear in real-time.
 
+## Binomo setup (recommended)
+
+1. Open **binomo.com/trading** in Chrome/Edge (maximize window).
+2. Install **Tesseract OCR** on Windows: https://github.com/UB-Mannheim/tesseract/wiki  
+   Default path: `C:\Program Files\Tesseract-OCR\tesseract.exe`
+3. Start Python + desktop app. Enable **Force Scan** if asset shows UNKNOWN.
+4. Place the overlay **away from the chart** (right side is OK) so candles are visible.
+5. Signals: **UP** = green button, **DOWN** = red button. **EXPIRY** matches your 1m/5m setting.
+
+> No screen-based tool can guarantee 100% wins. Use demo account first.
+
 ## Troubleshooting
-- **"Connection Refused"**: Ensure Python server is running on port 8000.
+- **`ECONNREFUSED 127.0.0.1:8000`**: Python engine is not running. Run `start_python.bat` and keep that window open until you see `Uvicorn running on http://127.0.0.1:8000`.
+- **"Connection Refused"**: Open http://127.0.0.1:8000/health — if it fails, fix Python errors in the engine terminal.
+- **SyntaxError on start**: Update project files; `app.py` must import without errors (`python -c "import app"` from `python-engine`).
 - **Black Screen / No Capture**: 
   - Ensure the app has Screen Recording permissions (mainly macOS).
   - On Windows, ensure no full-screen exclusive games/apps are blocking it.

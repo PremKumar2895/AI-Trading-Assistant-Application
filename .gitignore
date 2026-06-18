@@ -416,3 +416,9 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# AI Trading Assistant — runtime data
+python-engine/signals.db
+*.sqlite
+*.sqlite3
+python-engine/model_store/

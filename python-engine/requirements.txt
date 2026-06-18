@@ -1,7 +1,6 @@
-opencv-python
 numpy
+pandas
+scikit-learn
 fastapi
 uvicorn
-websockets
 pydantic
-python-multipart
